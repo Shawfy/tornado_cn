@@ -457,6 +457,7 @@ class RequestHandler(object):
         # subtle: The bytes case only executes on python 3, and the
         # unicode case only executes on python 2, because the other
         # cases are covered by the first match for str.
+        """头部各类型参数值转为str，特殊字符或特殊类型会抛出异常"""
         if isinstance(value, str):
             retval = value
         elif isinstance(value, bytes):  # py3
@@ -503,23 +504,33 @@ class RequestHandler(object):
         strip: bool = True,
     ) -> Optional[str]:
         """Returns the value of the argument with the given name.
+        根据给定名称获得请求的参数，默认会去掉参数前后空格
 
         If default is not provided, the argument is considered to be
         required, and we raise a `MissingArgumentError` if it is missing.
 
+        如果没有提供默认值，且参数也未找到，默认会抛出`MissingArgumentError`错误
+
         If the argument appears in the request more than once, we return the
         last value.
 
+        如果参数在request上有多次，默认返回最后一个参数
+
         This method searches both the query and body arguments.
+
+        这个方法会查找query和body两个地方的参数
         """
         return self._get_argument(name, default, self.request.arguments, strip)
 
     def get_arguments(self, name: str, strip: bool = True) -> List[str]:
         """Returns a list of the arguments with the given name.
+        返回指定名称的参数列表，默认会去掉参数前后空格
 
         If the argument is not present, returns an empty list.
+        如果参数不存在，返回空列表
 
         This method searches both the query and body arguments.
+        这个方法会查找query和body两个地方的参数
         """
 
         # Make sure `get_arguments` isn't accidentally being called with a
@@ -537,21 +548,25 @@ class RequestHandler(object):
     ) -> Optional[str]:
         """Returns the value of the argument with the given name
         from the request body.
+        获得指定名称在request body里的参数，默认会去掉参数前后空格
 
         If default is not provided, the argument is considered to be
         required, and we raise a `MissingArgumentError` if it is missing.
+        如果没有提供默认值，且参数也未找到，默认会抛出`MissingArgumentError`错误
 
         If the argument appears in the url more than once, we return the
         last value.
-
+        如果参数在url上有多次，默认返回最后一个参数
         .. versionadded:: 3.2
         """
         return self._get_argument(name, default, self.request.body_arguments, strip)
 
     def get_body_arguments(self, name: str, strip: bool = True) -> List[str]:
         """Returns a list of the body arguments with the given name.
+        获得指定名称在request body里的参数列表，默认会去掉参数前后空格
 
         If the argument is not present, returns an empty list.
+        如果参数不存在，返回空列表
 
         .. versionadded:: 3.2
         """
@@ -565,22 +580,24 @@ class RequestHandler(object):
     ) -> Optional[str]:
         """Returns the value of the argument with the given name
         from the request query string.
+        获得指定名称在request query里的参数，默认会去掉参数前后空格
 
         If default is not provided, the argument is considered to be
         required, and we raise a `MissingArgumentError` if it is missing.
+        如果没有提供默认值，且参数也未找到，默认会抛出`MissingArgumentError`错误
 
         If the argument appears in the url more than once, we return the
         last value.
-
+        如果参数在url上有多次，默认返回最后一个参数
         .. versionadded:: 3.2
         """
         return self._get_argument(name, default, self.request.query_arguments, strip)
 
     def get_query_arguments(self, name: str, strip: bool = True) -> List[str]:
         """Returns a list of the query arguments with the given name.
-
+        获得指定名称在request query里的参数列表，默认会去掉参数前后空格
         If the argument is not present, returns an empty list.
-
+        如果参数不存在，返回空列表
         .. versionadded:: 3.2
         """
         return self._get_arguments(name, self.request.query_arguments, strip)
@@ -592,6 +609,7 @@ class RequestHandler(object):
         source: Dict[str, List[bytes]],
         strip: bool = True,
     ) -> Optional[str]:
+        """同 get_argument"""
         args = self._get_arguments(name, source, strip=strip)
         if not args:
             if isinstance(default, _ArgDefaultMarker):
@@ -602,6 +620,7 @@ class RequestHandler(object):
     def _get_arguments(
         self, name: str, source: Dict[str, List[bytes]], strip: bool = True
     ) -> List[str]:
+        """同 get_arguments"""
         values = []
         for v in source.get(name, []):
             s = self.decode_argument(v, name=name)
@@ -616,16 +635,22 @@ class RequestHandler(object):
 
     def decode_argument(self, value: bytes, name: Optional[str] = None) -> str:
         """Decodes an argument from the request.
+        从请求中解码一个参数。
 
         The argument has been percent-decoded and is now a byte string.
         By default, this method decodes the argument as utf-8 and returns
         a unicode string, but this may be overridden in subclasses.
+        这个参数已经被解码现在是一个字节字符串，默认情况，这个方法会将参数解码未utf-8并且
+        返回一个unicode字符串，但是它可以被子类重写
 
         This method is used as a filter for both `get_argument()` and for
         values extracted from the url and passed to `get()`/`post()`/etc.
+        此方法可作为过滤器用在`get_argument()`方法，也可用在url中取值并传
+        递给`get()`/`post()`方法等
 
         The name of the argument is provided if known, but may be None
         (e.g. for unnamed groups in the url regex).
+
         """
         try:
             return _unicode(value)
@@ -637,17 +662,23 @@ class RequestHandler(object):
     @property
     def cookies(self) -> Dict[str, http.cookies.Morsel]:
         """An alias for
-        `self.request.cookies <.httputil.HTTPServerRequest.cookies>`."""
+        `self.request.cookies <.httputil.HTTPServerRequest.cookies>`.
+        此方法把self.request.cookies包装成此类的一个属性
+        """
         return self.request.cookies
 
     def get_cookie(self, name: str, default: Optional[str] = None) -> Optional[str]:
         """Returns the value of the request cookie with the given name.
+        获得指定名称的cookie值
 
         If the named cookie is not present, returns ``default``.
+        如果名称未找到返回默认值
 
         This method only returns cookies that were present in the request.
         It does not see the outgoing cookies set by `set_cookie` in this
         handler.
+
+        此方法仅返回在当前请求中的cookie值。看不见通过`set_cookie`方法设置的输出cookie值
         """
         if self.request.cookies is not None and name in self.request.cookies:
             return self.request.cookies[name].value
@@ -664,18 +695,24 @@ class RequestHandler(object):
         **kwargs: Any
     ) -> None:
         """Sets an outgoing cookie name/value with the given options.
+        设置输出cookie值和其他选项
 
         Newly-set cookies are not immediately visible via `get_cookie`;
         they are not present until the next request.
+        新设的cookie值不能立即在`get_cookie`方法中获得，需要在下次请求才能获得
 
         expires may be a numeric timestamp as returned by `time.time`,
         a time tuple as returned by `time.gmtime`, or a
         `datetime.datetime` object.
+        过期时间可以是一个数字的时间戳(by `time.time`)、一个tuple类型的格林威治时间（by time.gmtime）
+        或者一个`datetime.datetime`对象
 
         Additional keyword arguments are set on the cookies.Morsel
         directly.
         See https://docs.python.org/3/library/http.cookies.html#http.cookies.Morsel
         for available attributes.
+        其他的参数直接在`cookies.Morsel`设置
+        其他属性查看https://docs.python.org/3/library/http.cookies.html#http.cookies.Morsel
         """
         # The cookie library only accepts type str, in both python 2 and 3
         name = escape.native_str(name)
@@ -714,20 +751,25 @@ class RequestHandler(object):
         self, name: str, path: str = "/", domain: Optional[str] = None
     ) -> None:
         """Deletes the cookie with the given name.
+        删除指定名称的cookie
 
         Due to limitations of the cookie protocol, you must pass the same
         path and domain to clear a cookie as were used when that cookie
         was set (but there is no way to find out on the server side
         which values were used for a given cookie).
+        受cookie协议限制，必须使用设置cookie时相同的路径和域去清除cookie(但是无法从
+        服务器中找出使用cookie的值)
 
         Similar to `set_cookie`, the effect of this method will not be
         seen until the following request.
+        类似`set_cookie`,此方法在下个请求前看不见效果
         """
         expires = datetime.datetime.utcnow() - datetime.timedelta(days=365)
         self.set_cookie(name, value="", path=path, expires=expires, domain=domain)
 
     def clear_all_cookies(self, path: str = "/", domain: Optional[str] = None) -> None:
         """Deletes all the cookies the user sent with this request.
+        删除用户在本次请求中所有的cookie,调用`clear_cookie`方法做实际的清除
 
         See `clear_cookie` for more information on the path and domain
         parameters.
@@ -751,28 +793,36 @@ class RequestHandler(object):
         **kwargs: Any
     ) -> None:
         """Signs and timestamps a cookie so it cannot be forged.
+        给cookie加上签名和时间戳防止伪造
 
         You must specify the ``cookie_secret`` setting in your Application
         to use this method. It should be a long, random sequence of bytes
         to be used as the HMAC secret for the signature.
+        必须在应用设置中定义`cookie_secret`，签名应使用一个长且随机的字节序列HMAC密钥
 
         To read a cookie set with this method, use `get_secure_cookie()`.
+        使用`get_secure_cookie()`方法来读取当前方法设置的cookie
 
         Note that the ``expires_days`` parameter sets the lifetime of the
         cookie in the browser, but is independent of the ``max_age_days``
         parameter to `get_secure_cookie`.
         A value of None limits the lifetime to the current browser session.
+        注意`expires_days`参数，它是用来设置cookie在浏览器中的生命周期，但是与
+        `get_secure_cookie`中的参数`max_age_days`相互独立
 
         Secure cookies may contain arbitrary byte values, not just unicode
         strings (unlike regular cookies)
+        安全cookie可能包含任意字节值，不仅仅是unicode字符串
 
         Similar to `set_cookie`, the effect of this method will not be
         seen until the following request.
+        和`set_cookie`一样，此方法的效果要在下一个请求中才能看见
 
         .. versionchanged:: 3.2.1
 
            Added the ``version`` argument.  Introduced cookie version 2
            and made it the default.
+           增加零零版本参数，版本2是cookie默认模式
         """
         self.set_cookie(
             name,
@@ -785,10 +835,13 @@ class RequestHandler(object):
         self, name: str, value: Union[str, bytes], version: Optional[int] = None
     ) -> bytes:
         """Signs and timestamps a string so it cannot be forged.
+        创建用签名和时间戳的字符串，防止被伪造
 
         Normally used via set_secure_cookie, but provided as a separate
         method for non-cookie uses.  To decode a value not stored
         as a cookie use the optional value argument to get_secure_cookie.
+        此方法通常通过set_secure_cookie使用，对于不使用cookie可作为独立的方法提供，
+        为解码不作为cookie存储的值，可在get_secure_cookie中使用value参数
 
         .. versionchanged:: 3.2.1
 
@@ -815,13 +868,17 @@ class RequestHandler(object):
         min_version: Optional[int] = None,
     ) -> Optional[bytes]:
         """Returns the given signed cookie if it validates, or None.
+        如果签名的cookie有效就返回，否则返回None.
 
         The decoded cookie value is returned as a byte string (unlike
         `get_cookie`).
+        解码的cookie值作为字节字符串返回，和`get_cookie`不同
 
         Similar to `get_cookie`, this method only returns cookies that
         were present in the request. It does not see outgoing cookies set by
         `set_secure_cookie` in this handler.
+        和`get_cookie`一样，这个方法返回的是当前请求中的cookie，不能看见`set_secure_cookie`
+        方法设置的cookie
 
         .. versionchanged:: 3.2.1
 
@@ -843,8 +900,10 @@ class RequestHandler(object):
         self, name: str, value: Optional[str] = None
     ) -> Optional[int]:
         """Returns the signing key version of the secure cookie.
+        获得安全cookie签名的版本
 
         The version is returned as int.
+        返回的版本是整型数字
         """
         self.require_setting("cookie_secret", "secure cookies")
         if value is None:
@@ -857,11 +916,14 @@ class RequestHandler(object):
         self, url: str, permanent: bool = False, status: Optional[int] = None
     ) -> None:
         """Sends a redirect to the given (optionally relative) URL.
+        重定向url(可选相对路径)
 
         If the ``status`` argument is specified, that value is used as the
         HTTP status code; otherwise either 301 (permanent) or 302
         (temporary) is chosen based on the ``permanent`` argument.
         The default is 302 (temporary).
+        如果`status`已指定，这个值将作为http的状态码，否则将通过`permanent`参数选择301(永久)
+        或302(临时)，默认是302
         """
         if self._headers_written:
             raise Exception("Cannot redirect after headers have been written")
@@ -875,18 +937,29 @@ class RequestHandler(object):
 
     def write(self, chunk: Union[str, bytes, dict]) -> None:
         """Writes the given chunk to the output buffer.
+        把http返回的数据写入到一个输出buffer中
 
         To write the output to the network, use the `flush()` method below.
+        需要写到网络中，使用flush()
 
         If the given chunk is a dictionary, we write it as JSON and set
         the Content-Type of the response to be ``application/json``.
         (if you want to send JSON as a different ``Content-Type``, call
         ``set_header`` *after* calling ``write()``).
+        如果给的数据是字典，返回时会默认把`Content-Type`设置为`application/json`.
+        （如果想发送json数据，且想用其他`Content-Type`类型，可以在调用此方法前，
+        调用set_header）
 
         Note that lists are not converted to JSON because of a potential
         cross-site security vulnerability.  All JSON output should be
         wrapped in a dictionary.  More details at
         http://haacked.com/archive/2009/06/25/json-hijacking.aspx/ and
+        https://github.com/facebook/tornado/issues/1009
+        注意一个列表不能转为json，因为存在潜在的跨域安全漏洞，所有JSON输出都应包含在
+        一个字典里，
+        更多细节参看
+        http://haacked.com/archive/2009/06/25/json-hijacking.aspx/
+        和
         https://github.com/facebook/tornado/issues/1009
         """
         if self._finished:
@@ -907,12 +980,15 @@ class RequestHandler(object):
 
     def render(self, template_name: str, **kwargs: Any) -> "Future[None]":
         """Renders the template with the given arguments as the response.
+        根据模板名称返回模板
 
         ``render()`` calls ``finish()``, so no other output methods can be called
         after it.
+        此方法直接调用的finish方法，所有之后没有其他输出方法可以调用
 
         Returns a `.Future` with the same semantics as the one returned by `finish`.
         Awaiting this `.Future` is optional.
+        返回的是finish的可等待Future
 
         .. versionchanged:: 5.1
 
@@ -983,8 +1059,10 @@ class RequestHandler(object):
     def render_linked_js(self, js_files: Iterable[str]) -> str:
         """Default method used to render the final js links for the
         rendered webpage.
+        此方法用于生成网页js links
 
         Override this method in a sub-classed controller to change the output.
+        重写此方法改变输出结果
         """
         paths = []
         unique_paths = set()  # type: Set[str]
@@ -1006,8 +1084,10 @@ class RequestHandler(object):
     def render_embed_js(self, js_embed: Iterable[bytes]) -> bytes:
         """Default method used to render the final embedded js for the
         rendered webpage.
+        次方法用于嵌入js代码
 
         Override this method in a sub-classed controller to change the output.
+        重写此方法改变输出
         """
         return (
             b'<script type="text/javascript">\n//<![CDATA[\n'
@@ -1018,8 +1098,9 @@ class RequestHandler(object):
     def render_linked_css(self, css_files: Iterable[str]) -> str:
         """Default method used to render the final css links for the
         rendered webpage.
-
+        此方法用于生成网页css links
         Override this method in a sub-classed controller to change the output.
+        重写此方法改变输出
         """
         paths = []
         unique_paths = set()  # type: Set[str]
@@ -1040,16 +1121,20 @@ class RequestHandler(object):
     def render_embed_css(self, css_embed: Iterable[bytes]) -> bytes:
         """Default method used to render the final embedded css for the
         rendered webpage.
+        次方法用于嵌入css代码
 
         Override this method in a sub-classed controller to change the output.
+        重写此方法改变输出
         """
         return b'<style type="text/css">\n' + b"\n".join(css_embed) + b"\n</style>"
 
     def render_string(self, template_name: str, **kwargs: Any) -> bytes:
         """Generate the given template with the given arguments.
+        使用给定的参数生成指定的模板
 
         We return the generated byte string (in utf8). To generate and
         write a template as a response, use render() above.
+        我们返回生成的字节字符串(utf8).生成一个模板作为响应，使用上面的render()
         """
         # If no template_path is specified, use the path of the calling file
         template_path = self.get_template_path()
@@ -1073,12 +1158,15 @@ class RequestHandler(object):
 
     def get_template_namespace(self) -> Dict[str, Any]:
         """Returns a dictionary to be used as the default template namespace.
+        返回一个字典用着默认的模板命名空间
 
         May be overridden by subclasses to add or modify values.
+        可以在子类重写来添加或修改值
 
         The results of this method will be combined with additional
         defaults in the `tornado.template` module and keyword arguments
         to `render` or `render_string`.
+        这个方法的结果将会和`tornado.template`和`render`、`render_string`结合
         """
         namespace = dict(
             handler=self,
@@ -1096,12 +1184,15 @@ class RequestHandler(object):
 
     def create_template_loader(self, template_path: str) -> template.BaseLoader:
         """Returns a new template loader for the given path.
+        根据给定路径返回新的模板装载器
 
         May be overridden by subclasses.  By default returns a
         directory-based loader on the given path, using the
         ``autoescape`` and ``template_whitespace`` application
         settings.  If a ``template_loader`` application setting is
         supplied, uses that instead.
+        可以在子类重写，默认根据给丁的路径返回基于目录的装载器，如果application设置了template_loader
+        ，它会替换应用设置中的`autoescape`和`template_whitespace`
         """
         settings = self.application.settings
         if "template_loader" in settings:
@@ -1117,6 +1208,7 @@ class RequestHandler(object):
 
     def flush(self, include_footers: bool = False) -> "Future[None]":
         """Flushes the current output buffer to the network.
+        将当前输出buffer写到网络中
 
         .. versionchanged:: 4.0
            Now returns a `.Future` if no callback is given.
@@ -1167,20 +1259,22 @@ class RequestHandler(object):
 
     def finish(self, chunk: Optional[Union[str, bytes, dict]] = None) -> "Future[None]":
         """Finishes this response, ending the HTTP request.
+        完成响应，结束当前http请求
 
         Passing a ``chunk`` to ``finish()`` is equivalent to passing that
         chunk to ``write()`` and then calling ``finish()`` with no arguments.
+        调用finish()带chunk参数等价于调用wirte带chunk和finish不带参数
 
         Returns a `.Future` which may optionally be awaited to track the sending
         of the response to the client. This `.Future` resolves when all the response
         data has been sent, and raises an error if the connection is closed before all
         data can be sent.
-
+        返回一个`Future`，可以选择等待它来跟踪向客户端发送响应的过程.
+        当所有响应数据都已发送时，`.Future`会解决此问题,如果在发送所有数据之前关闭连接，则会引发错误
         .. versionchanged:: 5.1
 
            Now returns a `.Future` instead of ``None``.
         """
-        print(f"fin{chunk}")
         if self._finished:
             raise RuntimeError("finish() called twice")
 
