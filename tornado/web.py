@@ -414,37 +414,43 @@ class RequestHandler(object):
 
     def get_status(self) -> int:
         """Returns the status code for our response."""
-        """返回响应状态码"""
+        """获得HTTP响应状态码"""
         return self._status_code
 
     def set_header(self, name: str, value: _HeaderTypes) -> None:
         """Sets the given response header name and value.
+        设置响应头
 
         All header values are converted to strings (`datetime` objects
         are formatted according to the HTTP specification for the
         ``Date`` header).
-
+        所有头部值都被转字符串类型（datetime对象会根据http的日期头规范格式化）
         """
         self._headers[name] = self._convert_header_value(value)
 
     def add_header(self, name: str, value: _HeaderTypes) -> None:
         """Adds the given response header and value.
+        添加响应头
 
         Unlike `set_header`, `add_header` may be called multiple times
         to return multiple values for the same header.
+        和`set_header`不同，`add_header` 相同的头多次调用会返回多个值，多个值会拼接在一起。
         """
         self._headers.add(name, self._convert_header_value(value))
 
     def clear_header(self, name: str) -> None:
         """Clears an outgoing header, undoing a previous `set_header` call.
+        清除输出头，取消之前的`set_header`调用
 
         Note that this method does not apply to multi-valued headers
         set by `add_header`.
+        *忽略上面英文提示，add_header设置的值也会被删除
         """
         if name in self._headers:
             del self._headers[name]
 
     _INVALID_HEADER_CHAR_RE = re.compile(r"[\x00-\x1f]")
+    # 特殊字符正则
 
     def _convert_header_value(self, value: _HeaderTypes) -> str:
         # Convert the input value to a str. This type check is a bit
