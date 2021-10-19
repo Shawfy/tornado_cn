@@ -2683,6 +2683,8 @@ class Application(ReversibleRouter):
             handler._request_summary(),
             request_time,
         )
+        a="%d %s %.2fms" % (handler.get_status(),handler._request_summary(),request_time)
+        print(a)
 
 
 class _HandlerDelegate(httputil.HTTPMessageDelegate):
@@ -3492,12 +3494,16 @@ class StaticFileHandler(RequestHandler):
 
     def parse_url_path(self, url_path: str) -> str:
         """Converts a static URL path into a filesystem path.
+        将静态URL路径转换成文件系统路径
 
         ``url_path`` is the path component of the URL with
         ``static_url_prefix`` removed.  The return value should be
         filesystem path relative to ``static_path``.
+        ``url_path`` 是由去掉 ``static_url_prefix`` 的URL组成
+        返回值应是相对于``static_path``的文件系统路径。
 
         This is the inverse of `make_static_url`.
+        与`make_static_url`相反
         """
         if os.path.sep != "/":
             url_path = url_path.replace("/", os.path.sep)
@@ -3506,16 +3512,22 @@ class StaticFileHandler(RequestHandler):
     @classmethod
     def get_version(cls, settings: Dict[str, Any], path: str) -> Optional[str]:
         """Generate the version string to be used in static URLs.
+        生成用于静态路径的版本字符串
 
         ``settings`` is the `Application.settings` dictionary and ``path``
         is the relative location of the requested asset on the filesystem.
         The returned value should be a string, or ``None`` if no version
         could be determined.
+        `settings` :`Application.settings`字典。
+        `path`:请求资源在文件系统的相对位置
+        返回值应是一个字符串或者None(没有版本确定)
 
         .. versionchanged:: 3.1
            This method was previously recommended for subclasses to override;
            `get_content_version` is now preferred as it allows the base
            class to handle caching of the result.
+           此方法之前建议在子类里实现；
+           `get_content_version`是现在首选，因为允许基类处理结果的缓存。
         """
         abs_path = cls.get_absolute_path(settings["static_path"], path)
         return cls._get_cached_version(abs_path)
